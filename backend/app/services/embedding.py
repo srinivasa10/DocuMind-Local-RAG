@@ -14,7 +14,7 @@ class EmbeddingService(Protocol):
 class GeminiEmbeddingService:
     """Ultra-lightweight cloud embeddings (< 35 MB RAM), ideal for free tier cloud hosting like Render."""
 
-    def __init__(self, api_key: str, model: str = "text-embedding-004") -> None:
+    def __init__(self, api_key: str, model: str = "gemini-embedding-001") -> None:
         from google import genai
 
         self.client = genai.Client(api_key=api_key)
