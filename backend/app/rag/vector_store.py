@@ -23,7 +23,21 @@ class ChromaVectorStore:
         return self.client.get_or_create_collection(name=name, metadata={"hnsw:space": "cosine"})
 
     def add_documents(self, ids: list[str], texts: list[str], metadatas: list[dict]) -> None:
-        self.collection.upsert(ids=ids, documents=texts, embeddings=self.embeddings.embed_documents(texts), metadatas=metadatas)
+        embeddings = self.embeddings.embed_documents(texts)
+        try:
+            self.collection.upsert(ids=ids, documents=texts, embeddings=embeddings, metadatas=metadatas)
+        except Exception as exc:
+            if "dimension" in str(exc).lower():
+                # Stale collection with previous embedding dimensions; reset and recreate cleanly
+                name = self.collection.name
+                try:
+                    self.client.delete_collection(name)
+                except Exception:
+                    pass
+                self.collection = self.create_collection(name)
+                self.collection.upsert(ids=ids, documents=texts, embeddings=embeddings, metadatas=metadatas)
+            else:
+                raise
 
     def get_document_intro(self, document_id: str | None = None) -> list[RetrievedChunk]:
         where = {"document_id": document_id} if document_id else None
@@ -41,13 +55,18 @@ class ChromaVectorStore:
     def search(self, question: str, top_k: int, document_id: str | None = None) -> list[RetrievedChunk]:
         if self.collection.count() == 0:
             return []
-        query_params: dict = {
-            "query_embeddings": [self.embeddings.embed_query(question)],
-            "n_results": min(top_k, self.collection.count()),
-        }
-        if document_id:
-            query_params["where"] = {"document_id": document_id}
-        result = self.collection.query(**query_params)
+        try:
+            query_params: dict = {
+                "query_embeddings": [self.embeddings.embed_query(question)],
+                "n_results": min(top_k, self.collection.count()),
+            }
+            if document_id:
+                query_params["where"] = {"document_id": document_id}
+            result = self.collection.query(**query_params)
+        except Exception as exc:
+            if "dimension" in str(exc).lower():
+                return []
+            raise
         documents = result.get("documents", [[]])[0]
         distances = result.get("distances", [[]])[0]
         metadatas = result.get("metadatas", [[]])[0]
