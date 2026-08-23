@@ -14,7 +14,7 @@ from app.config import get_settings
 from app.rag.chunker import RecursiveTextChunker
 from app.rag.pipeline import RAGPipeline
 from app.rag.vector_store import ChromaVectorStore
-from app.services.embedding import EmbeddingService
+from app.services.embedding import GeminiEmbeddingService, LocalEmbeddingService
 from app.services.llm import GeminiProvider, LocalOllamaProvider
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -23,14 +23,15 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    embedding = EmbeddingService()
-    store = ChromaVectorStore(str(settings.chroma_path), settings.collection_name, embedding)
     if settings.llm_provider == "gemini":
         if not settings.gemini_api_key:
             raise RuntimeError("GEMINI_API_KEY is required when LLM_PROVIDER=gemini")
+        embedding = GeminiEmbeddingService(settings.gemini_api_key)
         llm = GeminiProvider(settings.gemini_api_key, settings.gemini_model)
     else:
+        embedding = LocalEmbeddingService()
         llm = LocalOllamaProvider(settings.ollama_base_url, settings.ollama_model)
+    store = ChromaVectorStore(str(settings.chroma_path), settings.collection_name, embedding)
     app.state.pipeline = RAGPipeline(store, RecursiveTextChunker(settings.chunk_size, settings.chunk_overlap), llm, settings.top_k)
     yield
 
