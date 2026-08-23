@@ -1,0 +1,2 @@
+"""Enterprise Knowledge Assistant backend."""
+

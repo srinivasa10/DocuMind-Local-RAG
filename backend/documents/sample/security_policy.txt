@@ -1,0 +1,6 @@
+Northstar Services Security Policy
+
+Employees must use unique passwords and multi-factor authentication for company systems. Never share passwords or access badges. Suspected phishing emails must be reported to security@northstar.example immediately.
+
+Confidential company data must not be uploaded to unapproved third-party services. When using the Gemini provider in this demo, use only public or sample documents because retrieved context is sent to that provider.
+
