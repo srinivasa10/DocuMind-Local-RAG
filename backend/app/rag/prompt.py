@@ -14,18 +14,21 @@ def build_prompt(question: str, chunks: list[RetrievedChunk]) -> str:
         f"CONTENT:\n{chunk.text}"
         for chunk in chunks
     )
-    return f"""You are an intelligent enterprise knowledge assistant. Answer the user's question clearly, thoroughly, and accurately based strictly on the provided context excerpts from uploaded documents.
+    return f"""You are an intelligent enterprise knowledge assistant. Answer the user's question clearly, thoroughly, and accurately based on the provided context excerpts from uploaded documents (such as resumes, reports, spreadsheets, presentations, and technical documentation).
 
 Instructions:
-- Base your answers strictly on the facts and details in the provided context.
+- Base your answers accurately on the facts, tables, data, and details in the provided context.
+- For profile/resume questions (e.g. skills, experience, projects, education, candidate background), synthesize information across all provided sections into an organized, well-formatted response.
+- For tabular or spreadsheet data, present rows, figures, and relationships clearly.
 - If the question asks for a summary, overview, purpose, or explanation of the document or topics within it, synthesize the key information from the provided excerpts.
 - If the provided context does not contain any relevant information to answer the question, reply with: "{NOT_FOUND_ANSWER}"
-- Structure your answer with clear markdown (bullet points, bold key terms) for high readability.
-- Speak naturally about the document facts without referencing internal technical details like chunk IDs or "the context".
+- Structure your answer with clean, readable markdown (bullet points, bold key terms, tables when appropriate).
+- Speak naturally and professionally about the document facts without referencing internal technical details like chunk IDs or "the context".
 
 CONTEXT:
 {context}
 
 QUESTION: {question}
 ANSWER:"""
+
 

@@ -27,10 +27,17 @@ class Settings(BaseSettings):
     chroma_path: Path = BACKEND_DIR / "chroma_db"
     documents_path: Path = BACKEND_DIR / "documents" / "uploads"
     collection_name: str = "enterprise_knowledge"
-    chunk_size: int = 800
-    chunk_overlap: int = 150
-    top_k: int = 4
-    max_upload_bytes: int = 10 * 1024 * 1024
+    chunk_size: int = 1200
+    chunk_overlap: int = 200
+    top_k: int = 8
+    max_upload_bytes: int = 25 * 1024 * 1024
+    # Supported universal file extensions
+    supported_extensions: list[str] = [
+        ".pdf", ".docx", ".xlsx", ".xls", ".csv", ".tsv",
+        ".pptx", ".txt", ".md", ".markdown", ".json",
+        ".yaml", ".yml", ".html", ".xml", ".log", ".rst",
+        ".png", ".jpg", ".jpeg", ".webp",
+    ]
     # NoDecode lets users provide the documented comma-separated .env value
     # instead of Pydantic's default JSON-list syntax.
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173", "http://localhost:3000", "*"]

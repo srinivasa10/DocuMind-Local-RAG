@@ -48,15 +48,50 @@ class RAGPipeline:
         texts: list[str] = []
         metadatas: list[dict] = []
 
+        # Find document header (first non-empty line of page 1) for context enrichment
+        doc_header = ""
+        if pages and pages[0].text:
+            first_lines = [line.strip() for line in pages[0].text.splitlines() if line.strip()]
+            if first_lines:
+                doc_header = first_lines[0][:100]
+
         for page_text in pages:
-            for chunk_index, text in enumerate(self.chunker.split_text(page_text.text)):
-                stable = hashlib.sha256(f"{document_id}:{page_text.page}:{chunk_index}:{text}".encode()).hexdigest()[:16]
+            page_num = page_text.page or 1
+            raw_chunks = self.chunker.split_text(page_text.text)
+            for chunk_index, text in enumerate(raw_chunks):
+                stable = hashlib.sha256(f"{document_id}:{page_num}:{chunk_index}:{text}".encode()).hexdigest()[:16]
+                
+                # Context-enriched chunk text: attaches document title, page, and header
+                prefix_parts = [f"Document: {original_name}"]
+                if doc_header and doc_header != original_name:
+                    prefix_parts.append(f"Header: {doc_header}")
+                if page_text.page:
+                    prefix_parts.append(f"Page: {page_num}")
+                
+                context_prefix = f"[{' | '.join(prefix_parts)}]\n"
+                enriched_text = f"{context_prefix}{text}"
+
                 ids.append(stable)
-                texts.append(text)
-                metadatas.append({"source": original_name, "page": page_text.page or 0, "chunk_id": stable, "document_id": document_id})
+                texts.append(enriched_text)
+                metadatas.append({
+                    "source": original_name,
+                    "page": page_num,
+                    "chunk_id": stable,
+                    "document_id": document_id,
+                })
 
         if not texts:
-            raise ValueError("The document did not contain extractable text")
+            from app.config import get_settings
+            settings = get_settings()
+            if not settings.gemini_api_key:
+                raise ValueError(
+                    "No extractable text found. This document appears to be scanned or image-based. "
+                    "Set GEMINI_API_KEY in your .env file to enable automatic OCR for scanned PDFs and image documents."
+                )
+            raise ValueError(
+                "No extractable text found. The document may be corrupted, password-protected, or contain "
+                "only non-textual content that could not be processed."
+            )
 
         self.store.add_documents(ids, texts, metadatas)
         return IngestResponse(

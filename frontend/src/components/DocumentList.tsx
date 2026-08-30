@@ -81,12 +81,13 @@ export function DocumentList({
 
       {safeDocs.length === 0 ? (
         <div className="empty-docs-box">
-          <p>No documents indexed yet. Upload a TXT or PDF above to build your knowledge base.</p>
+          <p>No documents indexed yet. Upload any document above to build your knowledge base.</p>
         </div>
       ) : (
         <div className="document-list-futuristic">
           {safeDocs.map((doc) => {
-            const isPdf = doc.filename.toLowerCase().endsWith(".pdf");
+            const ext = doc.filename.split(".").pop()?.toUpperCase() || "DOC";
+            const isPdf = ext === "PDF";
             const isSelected = selectedDocId === doc.document_id;
 
             return (
@@ -99,7 +100,7 @@ export function DocumentList({
                 {/* Mini 3D badge */}
                 <div className={`mini-doc-badge ${isPdf ? "pdf" : "txt"}`}>
                   <span className="mini-badge-corner" />
-                  <span className="mini-badge-label">{isPdf ? "PDF" : "TXT"}</span>
+                  <span className="mini-badge-label">{ext}</span>
                 </div>
 
                 <div className="doc-main-info">

@@ -43,16 +43,25 @@ export function DocumentUpload({ onIngested }: { onIngested: (result: IngestResp
     };
   }, [acknowledgement]);
 
+  const SUPPORTED_EXTENSIONS = new Set([
+    "pdf", "docx", "xlsx", "xls", "csv", "tsv",
+    "pptx", "txt", "md", "markdown", "json",
+    "yaml", "yml", "html", "xml", "log", "rst",
+    "png", "jpg", "jpeg", "webp",
+  ]);
+  const ACCEPTED_FILE_TYPES = ".pdf,.docx,.xlsx,.xls,.csv,.tsv,.pptx,.txt,.md,.markdown,.json,.yaml,.yml,.html,.xml,.log,.rst,.png,.jpg,.jpeg,.webp";
+  const MAX_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
+
   function handleFileSelect(selectedFile: File | undefined) {
     if (!selectedFile) return;
-    const ext = selectedFile.name.split(".").pop()?.toLowerCase();
-    if (ext !== "txt" && ext !== "pdf") {
-      setError("Please select a valid .txt or .pdf file.");
+    const ext = selectedFile.name.split(".").pop()?.toLowerCase() || "";
+    if (!SUPPORTED_EXTENSIONS.has(ext)) {
+      setError(`Unsupported file type .${ext}. Supported: PDF, DOCX, XLSX, PPTX, CSV, MD, JSON, TXT, etc.`);
       setFile(null);
       return;
     }
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      setError("File exceeds the 10 MB maximum upload size.");
+    if (selectedFile.size > MAX_SIZE_BYTES) {
+      setError("File exceeds the 25 MB maximum upload size.");
       setFile(null);
       return;
     }
@@ -81,7 +90,7 @@ export function DocumentUpload({ onIngested }: { onIngested: (result: IngestResp
   }
 
   const indexingStepMessages = [
-    "Extracting text & metadata...",
+    "Extracting text, tables & metadata...",
     "Chunking & generating vector embeddings...",
     "Storing vectors in ChromaDB collection...",
   ];
@@ -138,11 +147,11 @@ export function DocumentUpload({ onIngested }: { onIngested: (result: IngestResp
             </div>
             Ingest Knowledge
           </h2>
-          <span className="pill-badge-teal">TXT & PDF</span>
+          <span className="pill-badge-teal">All Documents</span>
         </div>
 
         <p className="card-desc">
-          Upload policy documents, handbooks, or guides to expand the assistant's knowledge base.
+          Upload PDF resumes, Word docs, Excel sheets, PPTX presentations, Markdown, or data files.
         </p>
 
         {/* Dropzone with Floating 3D badges */}
@@ -167,16 +176,16 @@ export function DocumentUpload({ onIngested }: { onIngested: (result: IngestResp
           <input
             ref={fileInputRef}
             type="file"
-            accept=".txt,.pdf"
+            accept={ACCEPTED_FILE_TYPES}
             disabled={busy}
             style={{ display: "none" }}
             onChange={(e) => handleFileSelect(e.target.files?.[0])}
           />
 
-          {/* Floating TXT Badge */}
-          <div className="floating-badge txt-badge" title="Text files supported">
+          {/* Floating DOCX / TXT Badge */}
+          <div className="floating-badge txt-badge" title="Word & Text docs supported">
             <div className="badge-corner" />
-            <span className="badge-type">TXT</span>
+            <span className="badge-type">DOC/TXT</span>
             <div className="badge-lines">
               <span />
               <span />
@@ -191,7 +200,7 @@ export function DocumentUpload({ onIngested }: { onIngested: (result: IngestResp
           </div>
 
           {/* Floating PDF Badge */}
-          <div className="floating-badge pdf-badge" title="PDF documents supported">
+          <div className="floating-badge pdf-badge" title="PDF documents & Resumes supported">
             <div className="badge-corner" />
             <span className="badge-type">PDF</span>
             <div className="badge-lines">
@@ -200,8 +209,8 @@ export function DocumentUpload({ onIngested }: { onIngested: (result: IngestResp
             </div>
           </div>
 
-          <p className="dropzone-title">Click or drag & drop a file here</p>
-          <p className="dropzone-subtitle">Supports .txt and text-searchable .pdf (Up to 10MB)</p>
+          <p className="dropzone-title">Click or drag & drop any document here</p>
+          <p className="dropzone-subtitle">PDF, DOCX, XLSX, PPTX, CSV, JSON, TXT, MD (Up to 25MB)</p>
         </div>
 
         {file && !busy && (

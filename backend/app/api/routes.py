@@ -53,13 +53,16 @@ async def clear_documents(request: Request) -> ClearDocumentsResponse:
 @router.post("/documents/ingest", response_model=IngestResponse)
 async def ingest_document(request: Request, file: UploadFile = File(...)) -> IngestResponse:
     settings = get_settings()
-    if not file.filename or Path(file.filename).suffix.lower() not in {".txt", ".pdf"}:
-        raise HTTPException(415, "Only TXT and PDF files are supported")
+    suffix = Path(file.filename or "").suffix.lower()
+    if not file.filename or suffix not in settings.supported_extensions:
+        supported_str = ", ".join(settings.supported_extensions)
+        raise HTTPException(415, f"Unsupported file type '{suffix}'. Supported formats: {supported_str}")
     payload = await file.read()
     if not payload:
         raise HTTPException(422, "Uploaded file is empty")
     if len(payload) > settings.max_upload_bytes:
-        raise HTTPException(413, "Uploaded file exceeds the 10 MB limit")
+        max_mb = settings.max_upload_bytes // (1024 * 1024)
+        raise HTTPException(413, f"Uploaded file exceeds the {max_mb} MB limit")
     safe_name = Path(file.filename).name
     destination = settings.documents_path / f"{uuid4().hex}_{safe_name}"
     destination.write_bytes(payload)

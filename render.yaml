@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: enterprise-knowledge-assistant-api
+    name: documind-rag-api
     runtime: python
     region: oregon
     plan: free
@@ -8,14 +8,24 @@ services:
     startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: "3.11.9"
       - key: LLM_PROVIDER
         value: gemini
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
       - key: GEMINI_API_KEY
-        sync: false
+        sync: false          # Set manually in Render dashboard — never commit API keys
       - key: CORS_ORIGINS
-        value: "*"
+        value: "*"           # Replace with your Vercel/Netlify domain after frontend is deployed
       - key: DEBUG_TRACE
-        value: "true"
+        value: "false"       # Disable in production for cleaner responses
+      - key: CHUNK_SIZE
+        value: "1200"
+      - key: CHUNK_OVERLAP
+        value: "200"
+      - key: TOP_K
+        value: "8"
+      - key: MAX_UPLOAD_BYTES
+        value: "26214400"    # 25 MB — matches frontend advertised limit
+      - key: COLLECTION_NAME
+        value: enterprise_knowledge
